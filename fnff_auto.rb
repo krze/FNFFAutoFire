@@ -34,6 +34,7 @@ location_damage = {
     :right_arm => 0,
     :left_leg => 0,
     :right_leg => 0,
+    :torso => 0,
     :head => 0
 }
 

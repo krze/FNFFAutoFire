@@ -124,7 +124,8 @@ until (dead || number_of_hits <= 0)
   number_of_hits = number_of_hits - 1
 end
 
-puts "VICTIM IS DEFINITELY DEAD!!\nHere's the obituary:\n" if dead
+puts "\nResults:\n\n"
+puts "VICTIM IS DEFINITELY DEAD!!\nHere's the obituary:\n\n" if dead
 puts "Victim is now at #{total_damage} damage"
 
 limb_destroyed = false

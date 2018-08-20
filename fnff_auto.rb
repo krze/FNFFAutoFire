@@ -140,5 +140,5 @@ armor.each do |location, amount|
   puts "Armor on #{location} is now #{amount}"
 end
 
-puts "A mortal save is necessary due to the loss of one or more limbs." if limb_destroyed && !dead
+puts "A mortal save is necessary due to the loss of one or more limbs." if (limb_destroyed && !dead)
 puts "The cover was DESTROYED!" if behind_cover && !partial_cover && cover_armor_value == 0

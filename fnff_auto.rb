@@ -95,9 +95,6 @@ until (dead || number_of_hits <= 0)
   hit_damage = roll(damage_dice_number, damage_dice_sides) + damage_modifier
   hit_location = location(roll(1,10))
 
-  puts "DEBUG: Calculcating for cover: #{behind_cover}"
-  puts "DEBUG: Calculating for partial cover: #{partial_cover}"
-
   if partial_cover && !above_partial_cover(hit_location)
     until above_partial_cover(hit_location)
       hit_location = location(roll(1,10))
@@ -107,27 +104,18 @@ until (dead || number_of_hits <= 0)
   hit_location_armor = armor[hit_location]
   hit_location_armor = 0 if hit_location_armor < 0
 
-  puts "DEBUG: Location is #{hit_location}"
-  puts "DEBUG: Armor value is #{hit_location_armor}"
-  puts "DEBUG: Cover armor value is #{cover_armor_value}"
-
-  # Cover
+  # Cover needs to be calculated first, then damage applied to cover
   hit_damage = hit_damage - cover_armor_value
-
-  # Track damage to cover
   cover_armor_value = cover_armor_value - 1 if cover_armor_value > 0
 
-  # Armor and BTM
+  # Armor and BTM is subtracted next, then damage applied to armor
   hit_damage = (hit_damage - hit_location_armor) - btm
   hit_damage = 1 unless hit_damage > 1
   hit_damage = hit_damage * 2 if hit_location == :head
-
-  # Reduce armor value
   armor[hit_location] = hit_location_armor - 1 if hit_location_armor > 0
 
   unless hit_location == :torso
     limb_damage[hit_location] = limb_damage[hit_location] + hit_damage
-
     dead = true if limb_damage[:head] > 8
   end
 

@@ -50,7 +50,7 @@ dead = false
 crippled = []
 
 puts "Cyberpunk 2020 FNFF automatic fire hit calculator for one target."
-puts "This currently uses the 'old' armor rules."
+puts "This calculator assumes you've already rolled to hit and hit the target."
 puts "Enter all values as positive integers. Please dont fuck with me."
 puts "Enter the number of hits"
 number_of_hits = gets.chomp.to_i

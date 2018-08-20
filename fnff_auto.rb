@@ -112,13 +112,15 @@ until (dead || number_of_hits <= 0)
   # Armor and BTM is subtracted next, then damage applied to armor
   hit_damage = (hit_damage - hit_location_armor) - btm
   hit_damage = 1 unless hit_damage > 1
-  hit_damage = hit_damage * 2 if hit_location == :head
   armor[hit_location] = hit_location_armor - 1 if hit_location_armor > 0
 
+  # Apply hit damage to location
+  hit_damage = hit_damage * 2 if hit_location == :head
   location_damage[hit_location] = location_damage[hit_location] + hit_damage
+
   total_damage = total_damage + hit_damage
 
-  dead = true if total_damage > 40 || location_damage[:head] > 8
+  dead = true if (total_damage > 40 || location_damage[:head] > 8)
   number_of_hits = number_of_hits - 1
 end
 

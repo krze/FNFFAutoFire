@@ -2,6 +2,9 @@
 This is a dead-simple command line calculator for Cyberpunk 2020's FNFF automatic
 fire rules.
 
+## How to use
+Run with `ruby fnff_auto.rb` and answer the questions in the prompt.
+
 ## Armor rules
 This currently uses the 'old' armor values (no bonus for stacking armor), and
 takes cover SPS values into account

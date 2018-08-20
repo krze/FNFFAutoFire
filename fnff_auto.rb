@@ -29,7 +29,7 @@ def above_partial_cover(location_value)
   location_value != :right_leg || location_value != :left_leg
 end
 
-limb_damage = {
+location_damage = {
     :left_arm => 0,
     :right_arm => 0,
     :left_leg => 0,
@@ -114,14 +114,10 @@ until (dead || number_of_hits <= 0)
   hit_damage = hit_damage * 2 if hit_location == :head
   armor[hit_location] = hit_location_armor - 1 if hit_location_armor > 0
 
-  unless hit_location == :torso
-    limb_damage[hit_location] = limb_damage[hit_location] + hit_damage
-    dead = true if limb_damage[:head] > 8
-  end
-
+  location_damage[hit_location] = location_damage[hit_location] + hit_damage
   total_damage = total_damage + hit_damage
-  dead = true if total_damage > 40
 
+  dead = true if total_damage > 40 || location_damage[:head] > 8
   number_of_hits = number_of_hits - 1
 end
 
@@ -130,8 +126,9 @@ puts "Victim is now at #{total_damage} damage"
 
 limb_destroyed = false
 
-limb_damage.each do |location, amount|
+location_damage.each do |location, amount|
   puts "#{location} took #{amount} damage."
+  next if location == :torso
   puts "#{location} is DESTROYED!" if amount >= 8
   limb_destroyed = true
 end
@@ -140,5 +137,5 @@ armor.each do |location, amount|
   puts "Armor on #{location} is now #{amount}"
 end
 
-puts "A mortal save is necessary due to the loss of one or more limbs." if limb_damage && !dead
+puts "A mortal save is necessary due to the loss of one or more limbs." if location_damage && !dead
 puts "The cover was DESTROYED!" if behind_cover && !partial_cover && cover_armor_value == 0

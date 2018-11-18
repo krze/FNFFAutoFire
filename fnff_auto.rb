@@ -62,7 +62,7 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
     puts "\nCalculating hit for layer #{current_layer}, in location #{hit_location}"
     puts "The next layer is #{next_layer}"
     puts "The current layer's armor is #{hit_location_armor}"
-    if hit_location_armor > 0
+    if (hit_location_armor > 0 && armor.key?(next_layer))
       sps_diff_bonus = 0
       next_layer_armor = armor[next_layer][hit_location]
       puts "The next layer armor is #{next_layer_armor}."

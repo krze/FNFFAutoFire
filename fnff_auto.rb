@@ -62,12 +62,12 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
     puts "\nCalculating hit for layer #{current_layer}, in location #{hit_location}"
     puts "The next layer is #{next_layer}"
     puts "The current layer's armor is #{hit_location_armor}"
-    if (hit_location_armor > 0 && armor.key?(next_layer))
+    if hit_location_armor > 0
       sps_diff_bonus = 0
-      next_layer_armor = armor[next_layer][hit_location]
-      puts "The next layer armor is #{next_layer_armor}."
+      next_layer_armor = armor.key?(next_layer) ? armor[next_layer][hit_location] : 0
       if next_layer >= 1
         sps_diff = (hit_location_armor - next_layer_armor).abs
+        puts "The next layer armor is #{next_layer_armor}."
         puts "The diff between the two layers is #{sps_diff}."
         if sps_diff < 27
           case sps_diff
@@ -248,7 +248,7 @@ until (dead || number_of_hits <= 0)
   hit_damage = hit_damage * 2 if hit_location == :head
   location_damage[hit_location] = location_damage[hit_location] + hit_damage
   unless hit_location == :torso || hit_damage < 8
-    location_damage[:destroyed_limbs] = hit_location
+    location_damage[:destroyed_limbs] << hit_location
   end
 
   total_damage = total_damage + hit_damage

@@ -258,7 +258,7 @@ if behind_cover
 end
 
 hit_number = 0
-rat_a_tat = "RAT-A"
+rat_a_tat = "\nThe gun goes RAT-A"
 number_of_hits.times do
   rat_a_tat << "-TAT"
 end
@@ -276,6 +276,7 @@ until number_of_hits <= 0
     puts "\nTarget is not under cover or wearing armor. #{hit_damage} damage finds flesh!"
   end
 
+  number_of_hits = number_of_hits - 1
   # Hit damage came back nil because it failed to penetrate cover
   next unless hit_damage
 
@@ -298,7 +299,6 @@ until number_of_hits <= 0
   end
 
   total_damage = total_damage + hit_damage
-  number_of_hits = number_of_hits - 1
   puts "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 end
 

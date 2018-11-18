@@ -64,7 +64,7 @@ def find_next_layer(armor, current_layer)
   next_layer
 end
 
-def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_cover)
+def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_cover, ap_rounds)
   behind_cover = armor.key?(:cover) && (partial_cover ? (hit_location == :left_leg || hit_location == :right_leg) : true)
   current_layer = behind_cover ? :cover : armor[:layer_count]
   next_layer = behind_cover ? armor[:layer_count] : find_next_layer(armor, armor[:layer_count] - 1)
@@ -74,6 +74,7 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
 
   until (current_layer == 0 || hit_damage <= 0)
     hit_location_armor = behind_cover ? armor[current_layer][:sps] : armor[current_layer][hit_location]
+
     current_layer_string = current_layer == :cover ? current_layer.to_s.upcase : "Armor Layer #{current_layer}"
 
     puts "\n#{hit_damage} damage strikes #{current_layer == :cover ? "#{current_layer_string}, protecting the #{hit_location.to_s.upcase.sub('_', ' ')}" : "#{current_layer_string} in the #{hit_location.to_s.upcase.sub('_', ' ')}"}"
@@ -106,8 +107,9 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
       end
 
       puts "#{hit_location.to_s.upcase} is protected with sps diff bonus of #{sps_diff_bonus}" if sps_diff_bonus > 0
+      puts "... but AP Rounds reduce armor effect by half. Meaning the total SPS is effectively #{(hit_location_armor + sps_diff_bonus) / 2}" if ap_rounds
       puts "Total hit damage is #{hit_damage}"
-      hit_damage = hit_damage - (hit_location_armor + sps_diff_bonus)
+      hit_damage = hit_damage - ((hit_location_armor + sps_diff_bonus) / ap_rounds ? 2 : 1)
       puts "Reduced hit damage is #{hit_damage}"
 
       # TODO: AP
@@ -156,7 +158,7 @@ crippled = []
 
 puts "Cyberpunk 2020 FNFF automatic fire hit calculator for one target."
 puts "This calculator assumes you've already rolled to hit and hit the target."
-puts "Enter all values as positive integers. Please dont fuck with me."
+puts "Enter all values as positive integers."
 puts "Enter the number of hits"
 number_of_hits = gets.chomp.to_i
 puts "Enter the number of dice for damage roll (i.e. the '3' in 3D6+1)"
@@ -165,9 +167,11 @@ puts "Enter the number of sides per dice for the damage roll (i.e. the '6' in 3D
 damage_dice_sides = gets.chomp.to_i
 puts "Enter the damage modifier, 0 if none. (i.e. the '1' in 3D6+1)"
 damage_modifier = gets.chomp.to_i
+puts "Are these Armor Piercing (AP) rounds? (y/n)"
+ap_rounds = gets.chomp.downcase == "y"
 
 puts "Is the target behind cover? (y/n)"
-behind_cover = gets.chomp == "y"
+behind_cover = gets.chomp.downcase == "y"
 cover_armor_value = 0
 partial_cover = false
 
@@ -176,7 +180,7 @@ if behind_cover
   cover_armor_value = gets.chomp.to_i
 
   puts "Is it partial cover (only legs covered)? (y/n)"
-  partial_cover = gets.chomp == "y"
+  partial_cover = gets.chomp.downcase == "y"
 end
 
 puts "Enter the victim's current damage points:"
@@ -257,10 +261,10 @@ until number_of_hits <= 0
   hit_damage = roll(damage_dice_number, damage_dice_sides) + damage_modifier
   hit_location = location(roll(1,10))
   hit_number += 1
-  puts "\n#{hit_number == 1 ? 'First' : 'Next'} hit..."
+  puts "\nHit \##{hit_number}:"
   unless target_unarmored
     puts "\nApplying damage of #{hit_damage} against target's armor:"
-    hit_damage = reduce_by_armor(hit_damage, hit_location, all_armor, cover_armor_value, partial_cover)
+    hit_damage = reduce_by_armor(hit_damage, hit_location, all_armor, cover_armor_value, partial_cover, ap_rounds)
   else
     puts "\nTarget is not under cover or wearing armor. #{hit_damage} damage hits!"
   end

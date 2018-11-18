@@ -258,7 +258,12 @@ if behind_cover
 end
 
 hit_number = 0
+rat_a_tat = "RAT-A"
+number_of_hits.times do
+  rat_a_tat << "-TAT"
+end
 
+puts rat_a_tat
 until number_of_hits <= 0
   hit_damage = roll(damage_dice_number, damage_dice_sides) + damage_modifier
   hit_location = location(roll(1,10))
@@ -268,7 +273,7 @@ until number_of_hits <= 0
     puts "\nApplying damage of #{hit_damage} against target's armor:"
     hit_damage = reduce_by_armor(hit_damage, hit_location, all_armor, cover_armor_value, partial_cover, ap_rounds)
   else
-    puts "\nTarget is not under cover or wearing armor. #{hit_damage} damage hits!"
+    puts "\nTarget is not under cover or wearing armor. #{hit_damage} damage finds flesh!"
   end
 
   # Hit damage came back nil because it failed to penetrate cover
@@ -286,15 +291,15 @@ until number_of_hits <= 0
 
   # Apply hit damage to location
   hit_damage = hit_damage * 2 if hit_location == :head
-  puts "Applying #{hit_damage} damage to #{hit_location.to_s.upcase.sub('_', ' ')}"
+  puts "Applying #{hit_damage} damage to #{hit_location.to_s.upcase.sub('_', ' ')}\n\n"
   location_damage[hit_location] = location_damage[hit_location] + hit_damage
   unless hit_location == :torso || hit_damage < 8
     location_damage[:destroyed_limbs] << hit_location
   end
 
   total_damage = total_damage + hit_damage
-
   number_of_hits = number_of_hits - 1
+  puts "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 end
 
 puts "\nResults:\n\n"
@@ -336,11 +341,11 @@ puts "The cover was DESTROYED!" if (behind_cover && !all_armor.key?(:cover))
 mortal_check_result = stun_or_mortal_check(total_damage)
 
 if (!dead && mortal_check_result)
-  puts "\nYour damage of #{total_damage} indicates you must check the following rolls, in order:\n\n"
+  puts "\nTotal damage of #{total_damage} indicates you must check against the following rolls, in order:\n\n"
   puts "MORTAL -0 for loss of limb(s)" if limb_destroyed
   puts "#{mortal_check_result}"
   puts "\nFor each roll, subtract the penalty listed from a D10 roll."
-  puts "The result must be EQUAL OR LESS THAN your stun save save value."
+  puts "The result must be EQUAL OR LESS THAN your character's stun save save value."
 end
 
 puts "\nVictim is now DEAD 0. Every minute increases DEAD state +2." if dead

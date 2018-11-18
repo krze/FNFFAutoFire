@@ -71,13 +71,14 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
   hit_damage = hit_damage
 
   hit_location_armor = 0
+  hit_location_string = hit_location.to_s.upcase.sub('_', ' ')
 
   until (current_layer == 0 || hit_damage <= 0)
     hit_location_armor = behind_cover ? armor[current_layer][:sps] : armor[current_layer][hit_location]
 
     current_layer_string = current_layer == :cover ? current_layer.to_s.upcase : "Armor Layer #{current_layer}"
 
-    puts "\n#{hit_damage} damage strikes #{current_layer == :cover ? "#{current_layer_string}, protecting the #{hit_location.to_s.upcase.sub('_', ' ')}" : "#{current_layer_string} in the #{hit_location.to_s.upcase.sub('_', ' ')}"}"
+    puts "\n#{hit_damage} damage strikes #{current_layer == :cover ? "#{current_layer_string}, protecting the #{hit_location_string}" : "#{current_layer_string} in the #{hit_location_string}"}"
     puts "#{current_layer_string}\'s SPS value is is #{hit_location_armor}"
 
     if hit_location_armor > 0
@@ -106,22 +107,23 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
         end
       end
 
-      puts "#{hit_location.to_s.upcase} is protected with sps diff bonus of #{sps_diff_bonus}" if sps_diff_bonus > 0
-      puts "... but AP Rounds reduce armor effect by half. Meaning the total SPS is effectively #{(hit_location_armor + sps_diff_bonus) / 2}" if ap_rounds
+      puts "#{hit_location_string} is protected with an SPS value of #{hit_location_armor}"
+      puts "... plus an SPS diff bonus of #{sps_diff_bonus}, making the total SPS value #{hit_location_armor + sps_diff_bonus}" if sps_diff_bonus > 0
+      puts "... but AP Rounds reduce armor effect by half. Meaning the SPS is effectively #{(hit_location_armor + sps_diff_bonus) / 2}" if ap_rounds
       puts "Total hit damage is #{hit_damage}"
-      hit_damage = hit_damage - ((hit_location_armor + sps_diff_bonus) / ap_rounds ? 2 : 1)
+      hit_damage = hit_damage - ((hit_location_armor + sps_diff_bonus) / (ap_rounds ? 2 : 1))
       puts "Reduced hit damage is #{hit_damage}"
 
       # TODO: AP
       if hit_damage > 0
-        puts("#{hit_damage} damage penetrated layer #{current_layer} to hit #{hit_location.to_s.upcase.sub('_', ' ')}")
+        puts("#{hit_damage} damage penetrated layer #{current_layer} to hit #{hit_location_string}")
         if current_layer == :cover
           armor[current_layer][:sps] = hit_location_armor - 1
         else
           armor[current_layer][hit_location] = hit_location_armor - 1
         end
 
-        puts("#{current_layer_string}\'s SPS value#{current_layer == :cover ? '' : " in location #{hit_location.to_s.upcase.sub('_', ' ')}"} is now #{hit_location_armor - 1}")
+        puts("#{current_layer_string}\'s SPS value#{current_layer == :cover ? '' : " in location #{hit_location_string}"} is now #{hit_location_armor - 1}")
         # Destroy the cover if it's been penetrated
         if (current_layer == :cover && armor[current_layer][:sps] <= 0)
           armor.delete(current_layer)
@@ -272,9 +274,9 @@ until number_of_hits <= 0
   # Hit damage came back nil because it failed to penetrate cover
   next unless hit_damage
 
-  hit_damage = hit_damage - btm
-
-  puts "Target's BTM #{btm} has reduced the damage to #{hit_damage}"
+  hit_damage = (hit_damage / (ap_rounds ? 2 : 1)) - btm
+  puts "Hit damage against flesh was reduced by half because it's an AP round." if ap_rounds
+  puts "Target's BTM #{btm} has reduced the damage to #{hit_damage}."
 
   # Always apply at least 1 damage
   if hit_damage <= 0
@@ -329,7 +331,7 @@ end
 
 puts "\nVictim's current damage is: #{total_damage}"
 puts "VICTIM IS DEFINITELY DEAD!!!" if dead || head_destroyed
-puts "The cover was DESTROYED!" if (behind_cover && all_armor[:cover][:sps] <= 0)
+puts "The cover was DESTROYED!" if (behind_cover && !all_armor.key?(:cover))
 
 mortal_check_result = stun_or_mortal_check(total_damage)
 

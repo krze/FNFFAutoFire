@@ -3,6 +3,12 @@ This is a dead-simple command line calculator for Cyberpunk 2020's FNFF automati
 
 You can use this calculator with single shots or 3-round-burst as long as you are not aiming for a specific location.
 
+## What this calculator does not cover:
+- Aimed shots at a location. The calculator rolls location for you, since it's intended for automatic fire
+- Bladed weapons, even if it's one hit (Hard/Soft armor rules are NOT included)
+- Ammo other than standard and AP
+- Projectile weapons that have special rules against Hard vs Soft armor
+
 ## How to use
 Run with `ruby fnff_auto.rb` and answer the questions in the prompt.
 
@@ -132,10 +138,46 @@ STUN -1
 For each roll, subtract the penalty listed from a D10 roll.
 ```
 
+Unless, of course, they have AP rounds...
+
+```
+Hit #6:
+
+Applying damage of 10 against target's armor:
+
+10 damage strikes COVER, protecting the RIGHT LEG
+COVER's SPS value is is 8
+The next layer armor is 3
+The diff between the two layers is 5.
+RIGHT LEG is protected with an SPS value of 8
+... plus an SPS diff bonus of 4, making the total SPS value 12
+... but AP Rounds reduce armor effect by half. Meaning the SPS is effectively 6
+Total hit damage is 10
+Reduced hit damage is 4
+4 damage penetrated layer cover to hit RIGHT LEG
+COVER's SPS value is now 7
+Continuing damage calculation for next layer...
+
+4 damage strikes Armor Layer 1 in the RIGHT LEG
+Armor Layer 1's SPS value is is 3
+RIGHT LEG is protected with an SPS value of 3
+... but AP Rounds reduce armor effect by half. Meaning the SPS is effectively 1
+Total hit damage is 4
+Reduced hit damage is 3
+3 damage penetrated layer 1 to hit RIGHT LEG
+Armor Layer 1's SPS value in location RIGHT LEG is now 2
+3 damage penetrated armor to hit the target!
+Hit damage against flesh was reduced by half because it's an AP round.
+Target's BTM 0 has reduced the damage to 1.
+Applying 1 damage to RIGHT LEG
+```
+
 ## Armor rules
 This calculator follows the 'New Armor Rules' from Cyberpunk 2020 2nd Edition. Layered armor will add a bonus depending on the difference between the outer layer and the inner layer.
 
 Armor that is penetrated will have one SPS point deducted. All subsequent shots will be checked against the most up-to-date value.
+
+AP rounds are covered by this calculator. Just ender "y" at the prompt when asked to use AP calculations.
 
 ## Cover rules
 If you indicate the target is behind cover, the cover will protect the target for shots to all locations. The cover's SPS value is added to the outer layer of armor for all shots.

@@ -77,7 +77,7 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
     current_layer_string = current_layer == :cover ? current_layer.to_s.upcase : "Armor Layer #{current_layer}"
 
     puts "\n#{hit_damage} damage strikes #{current_layer == :cover ? "#{current_layer_string}, protecting the #{hit_location.to_s.upcase.sub('_', ' ')}" : "#{current_layer_string} in the #{hit_location.to_s.upcase.sub('_', ' ')}"}"
-    puts "#{current_layer_string}\'s SPS vaue is is #{hit_location_armor}"
+    puts "#{current_layer_string}\'s SPS value is is #{hit_location_armor}"
 
     if hit_location_armor > 0
       sps_diff_bonus = 0
@@ -119,7 +119,7 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
           armor[current_layer][hit_location] = hit_location_armor - 1
         end
 
-        puts("#{current_layer_string}\'s SPS value#{current_layer == :cover ? '' : "in location #{hit_location.to_s.upcase.sub('_', ' ')}"} is now #{hit_location_armor - 1}")
+        puts("#{current_layer_string}\'s SPS value#{current_layer == :cover ? '' : " in location #{hit_location.to_s.upcase.sub('_', ' ')}"} is now #{hit_location_armor - 1}")
         # Destroy the cover if it's been penetrated
         if (current_layer == :cover && armor[current_layer][:sps] <= 0)
           armor.delete(current_layer)

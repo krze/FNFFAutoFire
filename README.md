@@ -185,4 +185,4 @@ If you indicate the target is behind cover, the cover will protect the target fo
 'Partial Cover' considers the target to be covered from the waist down. Shots that hit the legs will take into account the cover's SPS value.
 
 ## Fragile!
-I made this in an hour. It expects integers and y/n values only. Be gentle.
+This was a quick and dirty hacked calculator just to make my job as a ref easier. It's a prototype for a larger project. Be gentle with the input on this. Give it exactly what it's asking for on each prompt and no more. There may also be bugs.

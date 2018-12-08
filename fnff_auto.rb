@@ -64,82 +64,117 @@ def find_next_layer(armor, current_layer)
   next_layer
 end
 
+def sps_diff_bonus(diff)
+  case diff
+  when 0..4
+    return 5
+  when 5..8
+    return 4
+  when 9..14
+    return 3
+  when 15..20
+    return 2
+  when 21..26
+    return 1
+  else
+    return 0
+  end
+end
+
+def overall_armor(armor, location)
+  return armor[:cover][:sps] if armor.key?(:cover) && armor[:layer_count] < 1
+
+  most_armor_layer = :none
+  most_armor_value = 0
+  total_sps_diff_bonus = 0
+
+  armor.each do |layer, value|
+    next if layer == :layer_count
+    this_location = layer == :cover ? :sps : location
+
+    if value[this_location] > most_armor_value
+      most_armor_value = value[this_location]
+
+      if layer == :cover
+        most_armor_layer = :cover
+      else
+        most_armor_layer = layer
+      end
+    end
+  end
+
+  return 0 if most_armor_layer == :none
+
+  if armor.key?(:cover) && armor[armor[:layer_count]][location] > 0
+    sps_diff = (armor[:cover][:sps] - armor[armor[:layer_count]][location]).abs
+    total_sps_diff_bonus = total_sps_diff_bonus + sps_diff_bonus(sps_diff)
+  end
+
+
+  outermost_layer = armor[:layer_count]
+  next_layer = armor[:layer_count] - 1
+
+  if armor[:layer_count] > 1
+    armor[:layer_count].times do
+      break if next_layer == 0
+
+      this_layer_sps = armor[outermost_layer][location]
+      next_layer_sps = armor[next_layer][location]
+
+      break if this_layer_sps == 0 or next_layer_sps == 0
+      sps_diff = (this_layer_sps - next_layer_sps).abs
+      total_sps_diff_bonus = total_sps_diff_bonus + sps_diff_bonus(sps_diff)
+      outermost_layer = next_layer
+      next_layer = next_layer - 1
+    end
+  end
+
+  location = :sps if most_armor_layer == :cover
+  return armor[most_armor_layer][location] + total_sps_diff_bonus
+end
+
 def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_cover, ap_rounds)
   behind_cover = armor.key?(:cover) && (partial_cover ? (hit_location == :left_leg || hit_location == :right_leg) : true)
-  current_layer = behind_cover ? :cover : armor[:layer_count]
+  outer_layer = behind_cover ? :cover : armor[:layer_count]
   next_layer = behind_cover ? armor[:layer_count] : find_next_layer(armor, armor[:layer_count] - 1)
   hit_damage = hit_damage
 
-  hit_location_armor = 0
+  hit_location_armor = overall_armor(armor, hit_location)
   hit_location_string = hit_location.to_s.upcase.sub('_', ' ')
 
-  until (current_layer == 0 || hit_damage <= 0)
-    hit_location_armor = behind_cover ? armor[current_layer][:sps] : armor[current_layer][hit_location]
+  outer_layer_string = outer_layer == :cover ? outer_layer.to_s.upcase : "Armor Layer #{outer_layer}"
 
-    current_layer_string = current_layer == :cover ? current_layer.to_s.upcase : "Armor Layer #{current_layer}"
+  puts "\n#{hit_damage} damage strikes #{outer_layer == :cover ? "#{outer_layer_string}, protecting the #{hit_location_string}" : "the #{hit_location_string}"}"
 
-    puts "\n#{hit_damage} damage strikes #{current_layer == :cover ? "#{current_layer_string}, protecting the #{hit_location_string}" : "#{current_layer_string} in the #{hit_location_string}"}"
-    puts "#{current_layer_string}\'s SPS value is is #{hit_location_armor}"
+  if hit_location_armor > 0
+    puts "#{hit_location_string} is protected with an SPS value of #{hit_location_armor}"
+    puts "... but AP Rounds reduce armor effect by half. Meaning the SPS is effectively #{hit_location_armor / 2}" if ap_rounds
+    puts "Total hit damage is #{hit_damage}"
+    hit_damage = hit_damage - (hit_location_armor / (ap_rounds ? 2 : 1))
+    puts "Reduced hit damage is #{hit_damage}"
 
-    if hit_location_armor > 0
-      sps_diff_bonus = 0
-      next_layer_armor = armor.key?(next_layer) ? armor[next_layer][hit_location] : 0
+    if hit_damage > 0
+      puts("#{hit_damage} damage penetrated the armor to hit #{hit_location_string}")
+      if outer_layer == :cover
+        armor[:cover][:sps] = armor[:cover][:sps] - 1
 
-      if (next_layer >= 1 && next_layer_armor > 0)
-        sps_diff = (hit_location_armor - next_layer_armor).abs
-        puts "The next layer armor is #{next_layer_armor}"
-        puts "The diff between the two layers is #{sps_diff}."
-        if sps_diff < 27
-          case sps_diff
-          when 0..4
-            sps_diff_bonus = 5
-          when 5..8
-            sps_diff_bonus = 4
-          when 9..14
-            sps_diff_bonus = 3
-          when 15..20
-            sps_diff_bonus = 2
-          when 21..26
-            sps_diff_bonus = 1
-          else
-            sps_diff_bonus = 0
-          end
-        end
-      end
-
-      puts "#{hit_location_string} is protected with an SPS value of #{hit_location_armor}"
-      puts "... plus an SPS diff bonus of #{sps_diff_bonus}, making the total SPS value #{hit_location_armor + sps_diff_bonus}" if sps_diff_bonus > 0
-      puts "... but AP Rounds reduce armor effect by half. Meaning the SPS is effectively #{(hit_location_armor + sps_diff_bonus) / 2}" if ap_rounds
-      puts "Total hit damage is #{hit_damage}"
-      hit_damage = hit_damage - ((hit_location_armor + sps_diff_bonus) / (ap_rounds ? 2 : 1))
-      puts "Reduced hit damage is #{hit_damage}"
-
-      # TODO: AP
-      if hit_damage > 0
-        puts("#{hit_damage} damage penetrated layer #{current_layer} to hit #{hit_location_string}")
-        if current_layer == :cover
-          armor[current_layer][:sps] = hit_location_armor - 1
-        else
-          armor[current_layer][hit_location] = hit_location_armor - 1
-        end
-
-        puts("#{current_layer_string}\'s SPS value#{current_layer == :cover ? '' : " in location #{hit_location_string}"} is now #{hit_location_armor - 1}")
         # Destroy the cover if it's been penetrated
-        if (current_layer == :cover && armor[current_layer][:sps] <= 0)
-          armor.delete(current_layer)
-        end
-      else
-        puts("Damage failed to penetrate.\n")
-        return current_layer == :cover ? nil : hit_damage
+        armor.delete(:cover) if (armor[:cover][:sps] <= 0)
       end
-    end
 
-    current_layer = next_layer
-    next_layer = find_next_layer(armor, next_layer - 1)
-    behind_cover = false
-    puts("Continuing damage calculation for next layer...") if current_layer > 0
+      this_layer = armor[:layer_count]
+
+      until this_layer == 0
+        new_value = armor[this_layer][hit_location] - 1
+        armor[this_layer][hit_location] = new_value > 0 ? new_value : 0
+        this_layer = this_layer - 1
+      end
+    else
+      puts("Damage failed to penetrate.\n")
+      return outer_layer == :cover ? nil : hit_damage
+    end
   end
-  puts("#{hit_damage} damage penetrated #{current_layer == :cover ? 'cover' : 'armor'} to hit the target!")
+
   return hit_damage
 end
 

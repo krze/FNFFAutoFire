@@ -1,5 +1,5 @@
 # FNFFAutoFire
-This is a dead-simple command line calculator for Cyberpunk 2020's FNFF automatic fire rules. This automatic fire calculator does not permit you to aim at a specific location.
+This is a dead-simple command line calculator for Cyberpunk 2020's FNFF automatic fire rules. This automatic fire calculator does not permit you to aim at a specific location. It does take into account whether it's point blank or not, as point-blank shots do maximum damage.
 
 You can use this calculator with single shots or 3-round-burst as long as you are not aiming for a specific location.
 
@@ -177,7 +177,7 @@ This calculator follows the 'New Armor Rules' from Cyberpunk 2020 2nd Edition. L
 
 Armor that is penetrated will have one SPS point deducted. All subsequent shots will be checked against the most up-to-date value.
 
-AP rounds are covered by this calculator. Just ender "y" at the prompt when asked to use AP calculations.
+AP rounds are covered by this calculator. Just enter "y" at the prompt when asked to use AP calculations.
 
 ## Cover rules
 If you indicate the target is behind cover, the cover will protect the target for shots to all locations. The cover's SPS value is added to the outer layer of armor for all shots.

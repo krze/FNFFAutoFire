@@ -8,6 +8,14 @@ def roll(number, sides)
     total
 end
 
+def decide_hit_damage(is_point_blank, number, sides, damage_modifier)
+  if is_point_blank
+    return (number * sides) + damage_modifier
+  end
+
+  return roll(number, sides)
+end
+
 def location(roll_value)
   case roll_value
     when 2..4
@@ -195,7 +203,11 @@ crippled = []
 
 puts "Cyberpunk 2020 FNFF automatic fire hit calculator for one target."
 puts "This calculator assumes you've already rolled to hit and hit the target."
-puts "Enter all values as positive integers."
+puts "Enter all number values as positive integers. No negatives."
+puts "Enter yes or no answers as y or n"
+puts ""
+puts "Is this a point blank attack? (y/n)"
+point_blank = gets.chomp.downcase == "y"
 puts "Enter the number of hits"
 number_of_hits = gets.chomp.to_i
 puts "Enter the number of dice for damage roll (i.e. the '3' in 3D6+1)"
@@ -300,7 +312,7 @@ end
 
 puts rat_a_tat
 until number_of_hits <= 0
-  hit_damage = roll(damage_dice_number, damage_dice_sides) + damage_modifier
+  hit_damage = decide_hit_damage(point_blank, damage_dice_number, damage_dice_sides, damage_modifier)
   hit_location = location(roll(1,10))
   hit_number += 1
   puts "\nHit \##{hit_number}:"
@@ -329,7 +341,7 @@ until number_of_hits <= 0
   hit_damage = hit_damage * 2 if hit_location == :head
   puts "Applying #{hit_damage} damage to #{hit_location.to_s.upcase.sub('_', ' ')}\n\n"
   location_damage[hit_location] = location_damage[hit_location] + hit_damage
-  unless hit_location == :torso || hit_damage < 8
+  unless hit_location == :torso || location_damage[hit_location] < 8
     location_damage[:destroyed_limbs] << hit_location
   end
 

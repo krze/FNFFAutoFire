@@ -324,7 +324,7 @@ until number_of_hits <= 0
   end
 
   number_of_hits = number_of_hits - 1
-  # Hit damage came back nil because it failed to penetrate
+  # Hit damage came back as 0 because it failed to penetrate
   next unless hit_damage > 0
 
   hit_damage = (hit_damage / (ap_rounds ? 2 : 1)) - btm

@@ -179,7 +179,7 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
       end
     else
       puts("Damage failed to penetrate.\n")
-      return outer_layer == :cover ? nil : hit_damage
+      return hit_damage
     end
   end
 
@@ -324,8 +324,8 @@ until number_of_hits <= 0
   end
 
   number_of_hits = number_of_hits - 1
-  # Hit damage came back nil because it failed to penetrate cover
-  next unless hit_damage
+  # Hit damage came back nil because it failed to penetrate
+  next unless hit_damage > 0
 
   hit_damage = (hit_damage / (ap_rounds ? 2 : 1)) - btm
   puts "Hit damage against flesh was reduced by half because it's an AP round." if ap_rounds
@@ -334,7 +334,7 @@ until number_of_hits <= 0
   # Always apply at least 1 damage
   if hit_damage <= 0
     hit_damage = 1
-    puts "Target still needs to take 1 damage."
+    puts "Target still needs to take 1 damage if damage is reduced by BTM <= 0."
   end
 
   # Apply hit damage to location

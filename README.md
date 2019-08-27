@@ -3,9 +3,11 @@ This is a dead-simple command line calculator for Cyberpunk 2020's FNFF automati
 
 You can use this calculator with single shots or 3-round-burst as long as you are not aiming for a specific location.
 
+Adding 'h' to the end of a location's armor value will treat it as hard armor.
+
 ## What this calculator does not cover:
 - Aimed shots at a location. The calculator rolls location for you, since it's intended for automatic fire
-- Bladed weapons, even if it's one hit (Hard/Soft armor rules are NOT included)
+- Bladed weapons, even if it's one hit
 - Ammo other than standard and AP
 - Projectile weapons that have special rules against Hard vs Soft armor
 

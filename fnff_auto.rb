@@ -89,19 +89,20 @@ def sps_diff_bonus(diff)
   end
 end
 
-def overall_armor(armor, location)
+def armor_location_info(armor, location)
   return armor[:cover][:sps] if armor.key?(:cover) && armor[:layer_count] < 1
 
   most_armor_layer = :none
   most_armor_value = 0
   total_sps_diff_bonus = 0
+  hard = false
 
-  armor.each do |layer, value|
+  armor.each do |layer, locations|
     next if layer == :layer_count
     this_location = layer == :cover ? :sps : location
-
-    if value[this_location] > most_armor_value
-      most_armor_value = value[this_location]
+    hard = layer == :cover ? false : locations[this_location][:hard]
+    if locations[this_location][:value] > most_armor_value
+      most_armor_value = locations[this_location][:value]
 
       if layer == :cover
         most_armor_layer = :cover
@@ -113,8 +114,8 @@ def overall_armor(armor, location)
 
   return 0 if most_armor_layer == :none
 
-  if armor.key?(:cover) && armor[armor[:layer_count]][location] > 0
-    sps_diff = (armor[:cover][:sps] - armor[armor[:layer_count]][location]).abs
+  if armor.key?(:cover) && armor[armor[:layer_count]][location][:value] > 0
+    sps_diff = (armor[:cover][:sps] - armor[armor[:layer_count]][location][:value]).abs
     total_sps_diff_bonus = total_sps_diff_bonus + sps_diff_bonus(sps_diff)
   end
 
@@ -126,8 +127,8 @@ def overall_armor(armor, location)
     armor[:layer_count].times do
       break if next_layer == 0
 
-      this_layer_sps = armor[outermost_layer][location]
-      next_layer_sps = armor[next_layer][location]
+      this_layer_sps = armor[outermost_layer][location][:value]
+      next_layer_sps = armor[next_layer][location][:value]
 
       break if this_layer_sps == 0 or next_layer_sps == 0
       sps_diff = (this_layer_sps - next_layer_sps).abs
@@ -138,7 +139,10 @@ def overall_armor(armor, location)
   end
 
   location = :sps if most_armor_layer == :cover
-  return armor[most_armor_layer][location] + total_sps_diff_bonus
+  return {
+    :value => armor[most_armor_layer][location][:value] + total_sps_diff_bonus,
+    :hard => hard
+  }
 end
 
 def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_cover, ap_rounds)
@@ -147,8 +151,11 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
   next_layer = behind_cover ? armor[:layer_count] : find_next_layer(armor, armor[:layer_count] - 1)
   hit_damage = hit_damage
 
-  hit_location_armor = overall_armor(armor, hit_location)
+  hit_location_info = armor_location_info(armor, hit_location)
+  hit_location_armor = hit_location_info[:value]
+  hit_location_is_hard = hit_location_info[:hard]
   hit_location_string = hit_location.to_s.upcase.sub('_', ' ')
+  ap_is_effective = ap_rounds && !hit_location_is_hard
 
   outer_layer_string = outer_layer == :cover ? outer_layer.to_s.upcase : "Armor Layer #{outer_layer}"
 
@@ -156,9 +163,9 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
 
   if hit_location_armor > 0
     puts "#{hit_location_string} is protected with an SPS value of #{hit_location_armor}"
-    puts "... but AP Rounds reduce armor effect by half. Meaning the SPS is effectively #{hit_location_armor / 2}" if ap_rounds
+    puts "... but AP Rounds reduce armor effect by half. Meaning the SPS is effectively #{hit_location_armor / 2}" if ap_is_effective
     puts "Total hit damage is #{hit_damage}"
-    hit_damage = hit_damage - (hit_location_armor / (ap_rounds ? 2 : 1))
+    hit_damage = hit_damage - (hit_location_armor / (ap_is_effective ? 2 : 1))
     puts "Reduced hit damage is #{hit_damage}"
 
     if hit_damage > 0
@@ -173,8 +180,8 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
       this_layer = armor[:layer_count]
 
       until this_layer == 0
-        new_value = armor[this_layer][hit_location] - 1
-        armor[this_layer][hit_location] = new_value > 0 ? new_value : 0
+        new_value = armor[this_layer][hit_location][:value] - 1
+        armor[this_layer][hit_location][:value] = new_value > 0 ? new_value : 0
         this_layer = this_layer - 1
       end
     else
@@ -242,6 +249,7 @@ puts "The next few prompts are going to ask for armor values from INSIDE to OUT,
 puts "Skinweave counts as the FIRST layer."
 puts "All other armor (implanted or worn) follows."
 puts "Armor provided by environmental cover is calculated already. Do not enter any additional armor values provided by cover."
+puts "Enter the armor value followed by an 'h' to indicate it's hard armor (i.e. '15h')"
 
 all_armor = Hash.new
 armor_done = false
@@ -261,21 +269,42 @@ current_layer = 1
 # Layer on the armor
 until armor_done
   armor = {
-    :head => 0,
-    :torso => 0,
-    :left_arm => 0,
-    :right_arm => 0,
-    :left_leg => 0,
-    :right_leg => 0
+    :head => {
+      :value => 0,
+      :hard => false
+    },
+    :torso => {
+      :value => 0,
+      :hard => false
+    },
+    :left_arm => {
+      :value => 0,
+      :hard => false
+    },
+    :right_arm => {
+      :value => 0,
+      :hard => false
+    },
+    :left_leg => {
+      :value => 0,
+      :hard => false
+    },
+    :right_leg => {
+      :value => 0,
+      :hard => false
+    }
   }
 
   armor.each do |location, value|
     puts("\nLAYER NUMBER #{current_layer}") if location == :head
     unless no_armor_left[location]
       puts "Enter the victim's armor SPS value for #{location.to_s.sub('_', ' ').upcase}, Layer #{current_layer}"
-      value = gets.chomp.to_i
-      armor[location] = value unless value == 0
-      no_armor_left[location] = armor[location] == 0
+      input = gets.chomp
+      value = input.to_i
+      hard = input.downcase.include?('h')
+      armor[location][:value] = value unless value == 0
+      armor[location][:hard] = hard
+      no_armor_left[location] = armor[location][:value] == 0
     end
   end
 
@@ -374,10 +403,10 @@ end
 all_armor.each do |layer, armor|
   next if layer == :layer_count
   layer == :cover ? puts("\nCover remaining:") : puts("\nLayer #{layer} remaining:")
-  armor.each do |part, amount|
+  armor.each do |part, status|
     part_string = part.to_s.sub('_', ' ').upcase
 
-    puts "#{part_string} armor is now #{amount}"
+    puts "#{part_string} armor is now #{status[:value]}"
   end
 end
 

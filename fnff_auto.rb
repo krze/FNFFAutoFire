@@ -99,14 +99,23 @@ def armor_location_info(armor, location)
 
   armor.each do |layer, locations|
     next if layer == :layer_count
+    is_cover = layer == :cover
     this_location = layer == :cover ? :sps : location
     hard = layer == :cover ? false : locations[this_location][:hard]
+    puts "debug 1"
+    puts "Location: #{this_location}"
+    puts "Locations[this_location] #{locations[this_location]}"
+    puts "#{locations[this_location][:value]}"
+    puts "debug 2"
+    puts most_armor_value
     if locations[this_location][:value] > most_armor_value
       most_armor_value = locations[this_location][:value]
-
+      puts "Assigning most armor value #{locations[this_location][:value]}"
       if layer == :cover
+        puts "Cover is most armor"
         most_armor_layer = :cover
       else
+        puts "This is most armor layer #{layer}"
         most_armor_layer = layer
       end
     end

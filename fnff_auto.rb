@@ -56,22 +56,6 @@ def above_partial_cover(location_value)
   location_value != :right_leg || location_value != :left_leg
 end
 
-def find_next_layer(armor, current_layer)
-  next_layer = 1 #1 will be the last layer
-
-  # Start the peek at the next layer
-  mutable_layer_count = current_layer
-
-  # Keep peeking until you run out of layers
-  until (armor.key?(mutable_layer_count) || mutable_layer_count <= next_layer)
-    mutable_layer_count -= 1
-  end
-
-  next_layer = mutable_layer_count
-
-  next_layer
-end
-
 def sps_diff_bonus(diff)
   case diff
   when 0..4
@@ -98,7 +82,7 @@ def armor_location_info(armor, location, partial_cover)
 
   if behind_cover
     if partial_cover == false || (partial_cover && (location == :left_leg || location == :right_leg))
-      values = [armor[:cover], armor[location][:value]].sort
+      values = [armor[:cover][:value], armor[location][:value]].sort
       total_sps_diff_bonus = sps_diff_bonus(values.last - values.first)
     end
   end
@@ -132,21 +116,16 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
     puts "Reduced hit damage is #{hit_damage}"
 
     if hit_damage > 0
-      puts("#{hit_damage} damage penetrated the armor to hit #{hit_location_string}")
+      puts("#{hit_damage} damage penetrated to hit #{hit_location_string}")
       if outer_layer == :cover
-        armor[:cover][:sps] = armor[:cover][:sps] - 1
+        armor[:cover][:value] = armor[:cover][:value] - 1
 
         # Destroy the cover if it's been penetrated
-        armor.delete(:cover) if (armor[:cover][:sps] <= 0)
+        armor.delete(:cover) if (armor[:cover][:value] <= 0)
       end
 
-      this_layer = armor[:layer_count]
-
-      until this_layer == 0
-        new_value = armor[this_layer][hit_location][:value] - 1
-        armor[this_layer][hit_location][:value] = new_value > 0 ? new_value : 0
-        this_layer = this_layer - 1
-      end
+      new_value = armor[hit_location][:value] - 1
+      armor[hit_location][:value] = new_value > 0 ? new_value : 0
     else
       puts("Damage failed to penetrate.\n")
       return hit_damage
@@ -196,7 +175,7 @@ partial_cover = false
 
 if behind_cover
   puts "What is the SPS value of the cover?"
-  cover_armor_value = gets.chomp.to_i
+  cover_armor_value = gets.chomp
 
   puts "Is it partial cover (only legs covered)? (y/n)"
   partial_cover = gets.chomp.downcase == "y"
@@ -258,7 +237,7 @@ until armor_done
     }
   }
 
-  armor.each do |location, value|
+  armor.each do |location, status|
     puts("\nLAYER NUMBER #{current_layer}") if location == :head
     unless no_armor_left[location]
       puts "Enter the victim's armor SPS value for #{location.to_s.sub('_', ' ').upcase}, Layer #{current_layer}"
@@ -299,8 +278,8 @@ end
 # Apply cover armor to armor model
 if behind_cover
   all_armor[:cover] = Hash.new
-  all_armor[:cover][:value] = cover_armor_value
-  all_armor[:cover][:hard] = false
+  all_armor[:cover][:value] = cover_armor_value.to_i
+  all_armor[:cover][:hard] = cover_armor_value.downcase.include?('h')
   unless partial_cover
     all_armor[:cover][:partial] = true
   end
@@ -373,14 +352,11 @@ location_damage.each do |part, amount|
   end
 end
 
-all_armor.each do |layer, armor|
-  next if layer == :layer_count
-  layer == :cover ? puts("\nCover remaining:") : puts("\nLayer #{layer} remaining:")
-  armor.each do |part, status|
-    part_string = part.to_s.sub('_', ' ').upcase
+all_armor.each do |location, status|
+  part_string = location.to_s.sub('_', ' ').upcase
+  location == :cover ? puts("\nCover remaining:") : puts("\n#{part_string} armor remaining:")
 
-    puts "#{part_string} armor is now #{status[:value]}"
-  end
+  puts "#{part_string} armor is now #{status[:value]}"
 end
 
 puts "\nVictim's current damage is: #{total_damage}"

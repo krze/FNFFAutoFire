@@ -89,84 +89,38 @@ def sps_diff_bonus(diff)
   end
 end
 
-def armor_location_info(armor, location)
-  return armor[:cover][:sps] if armor.key?(:cover) && armor[:layer_count] < 1
+def armor_location_info(armor, location, partial_cover)
+  behind_cover = armor.key?(:cover)
+  return armor[:cover][:value] if behind_cover && armor[:no_armor_left] == true
 
-  most_armor_layer = :none
-  most_armor_value = 0
   total_sps_diff_bonus = 0
-  hard = false
+  hard = armor[location][:hard]
 
-  armor.each do |layer, locations|
-    next if layer == :layer_count
-    is_cover = layer == :cover
-    this_location = layer == :cover ? :sps : location
-    hard = layer == :cover ? false : locations[this_location][:hard]
-    puts "debug 1"
-    puts "Location: #{this_location}"
-    puts "Locations[this_location] #{locations[this_location]}"
-    puts "#{locations[this_location][:value]}"
-    puts "debug 2"
-    puts most_armor_value
-    if locations[this_location][:value] > most_armor_value
-      most_armor_value = locations[this_location][:value]
-      puts "Assigning most armor value #{locations[this_location][:value]}"
-      if layer == :cover
-        puts "Cover is most armor"
-        most_armor_layer = :cover
-      else
-        puts "This is most armor layer #{layer}"
-        most_armor_layer = layer
-      end
+  if behind_cover
+    if partial_cover == false || (partial_cover && (location == :left_leg || location == :right_leg))
+      values = [armor[:cover], armor[location][:value]].sort
+      total_sps_diff_bonus = sps_diff_bonus(values.last - values.first)
     end
   end
 
-  return 0 if most_armor_layer == :none
-
-  if armor.key?(:cover) && armor[armor[:layer_count]][location][:value] > 0
-    sps_diff = (armor[:cover][:sps] - armor[armor[:layer_count]][location][:value]).abs
-    total_sps_diff_bonus = total_sps_diff_bonus + sps_diff_bonus(sps_diff)
-  end
-
-
-  outermost_layer = armor[:layer_count]
-  next_layer = armor[:layer_count] - 1
-
-  if armor[:layer_count] > 1
-    armor[:layer_count].times do
-      break if next_layer == 0
-
-      this_layer_sps = armor[outermost_layer][location][:value]
-      next_layer_sps = armor[next_layer][location][:value]
-
-      break if this_layer_sps == 0 or next_layer_sps == 0
-      sps_diff = (this_layer_sps - next_layer_sps).abs
-      total_sps_diff_bonus = total_sps_diff_bonus + sps_diff_bonus(sps_diff)
-      outermost_layer = next_layer
-      next_layer = next_layer - 1
-    end
-  end
-
-  location = :sps if most_armor_layer == :cover
   return {
-    :value => armor[most_armor_layer][location][:value] + total_sps_diff_bonus,
+    :value => armor[location][:value] + total_sps_diff_bonus,
     :hard => hard
   }
 end
 
 def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_cover, ap_rounds)
   behind_cover = armor.key?(:cover) && (partial_cover ? (hit_location == :left_leg || hit_location == :right_leg) : true)
-  outer_layer = behind_cover ? :cover : armor[:layer_count]
-  next_layer = behind_cover ? armor[:layer_count] : find_next_layer(armor, armor[:layer_count] - 1)
+  outer_layer = behind_cover ? :cover : hit_location
   hit_damage = hit_damage
 
-  hit_location_info = armor_location_info(armor, hit_location)
+  hit_location_info = armor_location_info(armor, hit_location, partial_cover)
   hit_location_armor = hit_location_info[:value]
   hit_location_is_hard = hit_location_info[:hard]
   hit_location_string = hit_location.to_s.upcase.sub('_', ' ')
   ap_is_effective = ap_rounds && !hit_location_is_hard
 
-  outer_layer_string = outer_layer == :cover ? outer_layer.to_s.upcase : "Armor Layer #{outer_layer}"
+  outer_layer_string = outer_layer == :cover ? outer_layer.to_s.upcase : "body armor"
 
   puts "\n#{hit_damage} damage strikes #{outer_layer == :cover ? "#{outer_layer_string}, protecting the #{hit_location_string}" : "the #{hit_location_string}"}"
 
@@ -311,9 +265,18 @@ until armor_done
       input = gets.chomp
       value = input.to_i
       hard = input.downcase.include?('h')
-      armor[location][:value] = value unless value == 0
-      armor[location][:hard] = hard
-      no_armor_left[location] = armor[location][:value] == 0
+      previous_location_value = current_layer > 1 ? all_armor[location][:value] : nil
+
+      if previous_location_value && value > 0
+        sorted_values = [value, previous_location_value].sort
+        diff = sps_diff_bonus(sorted_values.last - sorted_values.first)
+        armor[location][:value] = sorted_values.last + diff
+      elsif value > 0
+        armor[location][:value] = value
+      end
+
+      armor[location][:hard] = hard && (value > 0)
+      no_armor_left[location] = value == 0
     end
   end
 
@@ -321,13 +284,13 @@ until armor_done
   armor_done = !no_armor_left.values.include?(false)
 
   if (armor_done && current_layer == 1)
-    all_armor[:layer_count] = 0
+    all_armor = armor
+    all_armor[:no_armor_left]
     (target_unarmored = true) unless behind_cover
   end
 
   unless armor_done
-    all_armor[current_layer] = armor
-    all_armor[:layer_count] = current_layer
+    all_armor = armor
   end
 
   current_layer += 1
@@ -336,7 +299,8 @@ end
 # Apply cover armor to armor model
 if behind_cover
   all_armor[:cover] = Hash.new
-  all_armor[:cover][:sps] = cover_armor_value
+  all_armor[:cover][:value] = cover_armor_value
+  all_armor[:cover][:hard] = false
   unless partial_cover
     all_armor[:cover][:partial] = true
   end

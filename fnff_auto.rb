@@ -100,9 +100,8 @@ def reduce_by_armor(hit_damage, hit_location, armor, cover_armor_value, partial_
 
   hit_location_info = armor_location_info(armor, hit_location, partial_cover)
   hit_location_armor = hit_location_info[:value]
-  hit_location_is_hard = hit_location_info[:hard]
   hit_location_string = hit_location.to_s.upcase.sub('_', ' ')
-  ap_is_effective = ap_rounds && !hit_location_is_hard
+  ap_is_effective = ap_rounds
 
   outer_layer_string = outer_layer == :cover ? outer_layer.to_s.upcase : "body armor"
 
